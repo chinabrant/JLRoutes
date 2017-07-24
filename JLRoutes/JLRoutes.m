@@ -1,9 +1,9 @@
 /*
  Copyright (c) 2017, Joel Levin
  All rights reserved.
-
+ 
  Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
-
+ 
  Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
  Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
  Neither the name of JLRoutes nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission.
@@ -21,7 +21,7 @@ NSString *const JLRouteSchemeKey = @"JLRouteScheme";
 NSString *const JLRouteWildcardComponentsKey = @"JLRouteWildcardComponents";
 NSString *const JLRoutesGlobalRoutesScheme = @"JLRoutesGlobalRoutesScheme";
 
-
+// 以scheme为键，JLRoutes为值，存放所有的路由, 每一个JLRoutes实类对应一个scheme
 static NSMutableDictionary *routeControllersMap = nil;
 
 // global options
@@ -32,7 +32,9 @@ static BOOL alwaysTreatsHostAsPathComponent = NO;
 
 @interface JLRoutes ()
 
+// 存放当前scheme对应的路由
 @property (nonatomic, strong) NSMutableArray *mutableRoutes;
+// 当前的scheme,每个JLRoutes对象对应一个scheme
 @property (nonatomic, strong) NSString *scheme;
 
 @end
@@ -55,6 +57,7 @@ static BOOL alwaysTreatsHostAsPathComponent = NO;
     return [self.mutableRoutes description];
 }
 
+// 以scheme为键，array为值，返回所有的路由
 + (NSDictionary <NSString *, NSArray <JLRRouteDefinition *> *> *)allRoutes;
 {
     NSMutableDictionary *dictionary = [NSMutableDictionary dictionary];
@@ -95,11 +98,13 @@ static BOOL alwaysTreatsHostAsPathComponent = NO;
     return routesController;
 }
 
+// 移除指定scheme下的所有路由
 + (void)unregisterRouteScheme:(NSString *)scheme
 {
     [routeControllersMap removeObjectForKey:scheme];
 }
 
+// 移除所有的scheme，即所有的路由
 + (void)unregisterAllRouteSchemes
 {
     [routeControllersMap removeAllObjects];
@@ -125,11 +130,15 @@ static BOOL alwaysTreatsHostAsPathComponent = NO;
     }
 }
 
+// 添加一个路由，指定优先级
 - (void)addRoute:(NSString *)routePattern priority:(NSUInteger)priority handler:(BOOL (^)(NSDictionary<NSString *, id> *parameters))handlerBlock
 {
+    // 解析可选的路由
     NSArray <NSString *> *optionalRoutePatterns = [JLRParsingUtilities expandOptionalRoutePatternsForPattern:routePattern];
+    // 生成一个路由对象
     JLRRouteDefinition *route = [[JLRRouteDefinition alloc] initWithScheme:self.scheme pattern:routePattern priority:priority handlerBlock:handlerBlock];
     
+    // 如果可选的路由不为空，注册可选的路由
     if (optionalRoutePatterns.count > 0) {
         // there are optional params, parse and add them
         for (NSString *pattern in optionalRoutePatterns) {
@@ -140,6 +149,7 @@ static BOOL alwaysTreatsHostAsPathComponent = NO;
         return;
     }
     
+    // 注册路由
     [self _registerRoute:route];
 }
 
@@ -152,6 +162,7 @@ static BOOL alwaysTreatsHostAsPathComponent = NO;
     NSInteger routeIndex = NSNotFound;
     NSInteger index = 0;
     
+    // 查找router中是否有指定要移除的router
     for (JLRRouteDefinition *route in [self.mutableRoutes copy]) {
         if ([route.pattern isEqualToString:routePattern]) {
             routeIndex = index;
@@ -161,6 +172,7 @@ static BOOL alwaysTreatsHostAsPathComponent = NO;
     }
     
     if (routeIndex != NSNotFound) {
+        // 存在就从数组中移除
         [self.mutableRoutes removeObjectAtIndex:(NSUInteger)routeIndex];
     }
 }
@@ -169,6 +181,7 @@ static BOOL alwaysTreatsHostAsPathComponent = NO;
 {
     [self.mutableRoutes removeAllObjects];
 }
+
 
 - (void)setObject:(id)handlerBlock forKeyedSubscript:(NSString *)routePatten
 {
@@ -192,11 +205,13 @@ static BOOL alwaysTreatsHostAsPathComponent = NO;
     return [self _routeURL:URL withParameters:nil executeRouteBlock:NO];
 }
 
+// 处理指定的路由，先查找到对应scheme的JLRoutes对象
 + (BOOL)routeURL:(NSURL *)URL
 {
     return [[self _routesControllerForURL:URL] routeURL:URL];
 }
 
+// 实例方法，处理指定scheme的路由
 - (BOOL)routeURL:(NSURL *)URL
 {
     return [self _routeURL:URL withParameters:nil executeRouteBlock:YES];
@@ -224,14 +239,19 @@ static BOOL alwaysTreatsHostAsPathComponent = NO;
     return routeControllersMap[URL.scheme] ?: [JLRoutes globalRoutes];
 }
 
+// 注册路由
 - (void)_registerRoute:(JLRRouteDefinition *)route
 {
+    
     if (route.priority == 0 || self.mutableRoutes.count == 0) {
+        // 注册的第一个路由，或者是优先级为0的路由，直接加到数组的最后面
         [self.mutableRoutes addObject:route];
     } else {
+        
         NSUInteger index = 0;
         BOOL addedRoute = NO;
         
+        // 根据路由设置的优先级，加到数组的指定位置，优先级越高，位置越靠前
         // search through existing routes looking for a lower priority route than this one
         for (JLRRouteDefinition *existingRoute in [self.mutableRoutes copy]) {
             if (existingRoute.priority < route.priority) {
@@ -243,6 +263,7 @@ static BOOL alwaysTreatsHostAsPathComponent = NO;
             index++;
         }
         
+        // 已经存在的路由优先级都很高，就把这个路由加到最后面，它是优先级最低的
         // if we weren't able to find a lower priority route, this is the new lowest priority route (or same priority as self.routes.lastObject) and should just be added
         if (!addedRoute) {
             [self.mutableRoutes addObject:route];
@@ -250,6 +271,15 @@ static BOOL alwaysTreatsHostAsPathComponent = NO;
     }
 }
 
+
+/**
+ 查找指定路由是否存在，根据参数决定是否要执行此路由的block
+ 
+ @param URL 路由的url
+ @param parameters 如果要执行时的执行参数，只有当 /executeRouteBlock/ 为YES时才有效
+ @param executeRouteBlock 是否要执行block
+ @return 是否存在
+ */
 - (BOOL)_routeURL:(NSURL *)URL withParameters:(NSDictionary *)parameters executeRouteBlock:(BOOL)executeRouteBlock
 {
     if (!URL) {
@@ -259,7 +289,9 @@ static BOOL alwaysTreatsHostAsPathComponent = NO;
     [self _verboseLog:@"Trying to route URL %@", URL];
     
     BOOL didRoute = NO;
+    // 生成一个当前要处理的url的request对象
     JLRRouteRequest *request = [[JLRRouteRequest alloc] initWithURL:URL alwaysTreatsHostAsPathComponent:alwaysTreatsHostAsPathComponent];
+    
     
     for (JLRRouteDefinition *route in [self.mutableRoutes copy]) {
         // check each route for a matching response
@@ -275,12 +307,14 @@ static BOOL alwaysTreatsHostAsPathComponent = NO;
             return YES;
         }
         
+        // 配置调用的参数
         // configure the final parameters
         NSMutableDictionary *finalParameters = [NSMutableDictionary dictionary];
         [finalParameters addEntriesFromDictionary:response.parameters];
         [finalParameters addEntriesFromDictionary:parameters];
         [self _verboseLog:@"Final parameters are %@", finalParameters];
         
+        // 执行路由的block
         didRoute = [route callHandlerBlockWithParameters:finalParameters];
         
         if (didRoute) {
@@ -293,12 +327,14 @@ static BOOL alwaysTreatsHostAsPathComponent = NO;
         [self _verboseLog:@"Could not find a matching route"];
     }
     
+    // 如果找不到合适的路由，并且这个路由指定了fallback，并且这个路由不在全局路由中
     // if we couldn't find a match and this routes controller specifies to fallback and its also not the global routes controller, then...
     if (!didRoute && self.shouldFallbackToGlobalRoutes && ![self _isGlobalRoutesController]) {
         [self _verboseLog:@"Falling back to global routes..."];
         didRoute = [[JLRoutes globalRoutes] _routeURL:URL withParameters:parameters executeRouteBlock:executeRouteBlock];
     }
     
+    // 找不到可以执行的block，执行最后的 /unmatchedURLHandler/
     // if, after everything, we did not route anything and we have an unmatched URL handler, then call it
     if (!didRoute && executeRouteBlock && self.unmatchedURLHandler) {
         [self _verboseLog:@"Falling back to the unmatched URL handler"];
@@ -308,6 +344,7 @@ static BOOL alwaysTreatsHostAsPathComponent = NO;
     return didRoute;
 }
 
+// 判断当前的JLRoutes是否是全局的JLRoutes
 - (BOOL)_isGlobalRoutesController
 {
     return [self.scheme isEqualToString:JLRoutesGlobalRoutesScheme];

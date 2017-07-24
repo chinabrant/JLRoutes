@@ -17,10 +17,17 @@ NS_ASSUME_NONNULL_BEGIN
 
 @class JLRRouteDefinition;
 
+/*
+ "JLRouteURL": "myapp://post/edit/123?debug=true&foo=bar",
+ "JLRoutePattern": "/:object/:action/:primaryKey",
+ "JLRouteScheme": "JLRoutesGlobalRoutesScheme"
+ */
 
+// url 的路径，不包含前面的scheme，也不包含后面的参数
 /// The matching route pattern, passed in the handler parameters.
 extern NSString *const JLRoutePatternKey;
 
+// 整个的路由，即调用openUrl时传入的整个的字符串
 /// The original URL that was routed, passed in the handler parameters.
 extern NSString *const JLRouteURLKey;
 
@@ -42,9 +49,11 @@ extern NSString *const JLRoutesGlobalRoutesScheme;
 
 @interface JLRoutes : NSObject
 
+// 如果在当前的scheme中匹配不到这个路由，是否要到全局的路由中去匹配，默认是否
 /// Controls whether or not this router will try to match a URL with global routes if it can't be matched in the current namespace. Default is NO.
 @property (nonatomic, assign) BOOL shouldFallbackToGlobalRoutes;
 
+// 当路由的block返回no时，会调用这个block
 /// Called any time routeURL returns NO. Respects shouldFallbackToGlobalRoutes.
 @property (nonatomic, copy, nullable) void (^unmatchedURLHandler)(JLRoutes *routes, NSURL *__nullable URL, NSDictionary<NSString *, id> *__nullable parameters);
 
@@ -95,10 +104,12 @@ extern NSString *const JLRoutesGlobalRoutesScheme;
 /// Registers a routePattern with default priority (0) using dictionary-style subscripting.
 - (void)setObject:(nullable id)handlerBlock forKeyedSubscript:(NSString *)routePatten;
 
+// 以一个数组返回所有的路由项
 /// Return all registered routes in the receiving scheme namespace.
 /// @see allRoutes
 - (NSArray <JLRRouteDefinition *> *)routes;
 
+// 以scheme做为键，返回分类好的所有路由项
 /// All registered routes, keyed by scheme
 /// @see routes
 + (NSDictionary <NSString *, NSArray <JLRRouteDefinition *> *> *)allRoutes;

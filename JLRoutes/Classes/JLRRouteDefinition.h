@@ -16,6 +16,12 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
+/**
+ JLRRouteDefinition 是一个model对象，表示一个注册的路由，它包含路由的scheme，pattern，优先级。
+ 
+ 这个类可以通过覆写 /-routeResponseForRequest:decodePlusSymbols:/ 方法来子类化，定制解析行为。
+ /-callHandlerBlockWithParameters/ 方法也可以覆写来定制回调block的参数传递
+ */
 
 /**
  JLRRouteDefinition is a model object representing a registered route, including the URL scheme, route pattern, and priority.
@@ -26,6 +32,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 @interface JLRRouteDefinition : NSObject
 
+// 路由使用的url scheme，如果是全局的路由，则是 JLRoutesGlobalRoutesScheme
 /// The URL scheme for which this route applies, or JLRoutesGlobalRoutesScheme if global.
 @property (nonatomic, copy, readonly) NSString *scheme;
 
@@ -43,6 +50,9 @@ NS_ASSUME_NONNULL_BEGIN
 /// @name Creating Route Definitions
 ///---------------------------------
 
+/**
+ 创建一个新的路由，创建的路由可以直接添加到一个JLRoutes实例中
+ */
 
 /**
  Creates a new route definition. The created definition can be directly added to an instance of JLRoutes.

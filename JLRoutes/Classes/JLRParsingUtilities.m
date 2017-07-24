@@ -58,6 +58,7 @@
     return [updatedQueryParams copy];
 }
 
+// 这个方法解析可选的路由设置，当注册路由的时候这样写 /path/:thing/(/a)(/b)(/c) 时，a，b，c都是可选的，会把各种情况的路由都注册进去。
 + (NSArray <NSString *> *)expandOptionalRoutePatternsForPattern:(NSString *)routePattern
 {
     /* this method exists to take a route pattern that is known to contain optional params, such as:

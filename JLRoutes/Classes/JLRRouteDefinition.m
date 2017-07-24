@@ -51,9 +51,19 @@
     return [NSString stringWithFormat:@"<%@ %p> - %@ (priority: %@)", NSStringFromClass([self class]), self, self.pattern, @(self.priority)];
 }
 
+
+/**
+ 判断当前的路由对象是否可以处理指定的request
+ 
+ @param request 要处理的request
+ @param decodePlusSymbols
+ @return
+ */
 - (JLRRouteResponse *)routeResponseForRequest:(JLRRouteRequest *)request decodePlusSymbols:(BOOL)decodePlusSymbols
 {
+    // 是否包含通配符
     BOOL patternContainsWildcard = [self.patternComponents containsObject:@"*"];
+    
     
     if (request.pathComponents.count != self.patternComponents.count && !patternContainsWildcard) {
         // definitely not a match, nothing left to do

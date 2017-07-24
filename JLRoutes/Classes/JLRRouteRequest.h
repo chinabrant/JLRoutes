@@ -14,9 +14,15 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
+/**
+ JLRRouteRequest 是一个model对象，表示一个路由请求
+ 
+ 会将请求解析成路径和请求参数
+ */
 
 /**
  JLRRouteRequest is a model representing a request to route a URL.
+ 
  It gets parsed into path components and query parameters, which are then used by JLRRouteDefinition to attempt a match.
  */
 
